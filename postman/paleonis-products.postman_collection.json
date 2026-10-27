@@ -1,0 +1,80 @@
+{
+  "info": {
+    "name": "PaLeonis - Products (TP 2)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" }
+  ],
+  "item": [
+    {
+      "name": "Lister les produits",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/products" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('200 OK', () => pm.response.to.have.status(200));",
+        "pm.test('Tableau d\\'au moins 3 produits', () => pm.expect(pm.response.json().length).to.be.at.least(3));"
+      ] } }]
+    },
+    {
+      "name": "Lire un produit",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/products/1" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('200 OK', () => pm.response.to.have.status(200));",
+        "pm.test('Produit 1', () => pm.expect(pm.response.json().id).to.eql(1));"
+      ] } }]
+    },
+    {
+      "name": "Lire un produit inexistant",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/products/999" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+      ] } }]
+    },
+    {
+      "name": "Créer un produit",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/products",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"name\": \"Certificat SSL\", \"price\": 49 }" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('201 Created', () => pm.response.to.have.status(201));",
+        "pm.test('Produit renvoyé avec un id', () => pm.expect(pm.response.json().id).to.be.a('number'));",
+        "pm.collectionVariables.set('createdId', pm.response.json().id);"
+      ] } }]
+    },
+    {
+      "name": "Relire le produit créé",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/products/{{createdId}}" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('200 OK', () => pm.response.to.have.status(200));",
+        "pm.test('C\\'est bien le Certificat SSL', () => pm.expect(pm.response.json().name).to.eql('Certificat SSL'));"
+      ] } }]
+    },
+    {
+      "name": "Créer avec un prix négatif",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/products",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"name\": \"Hack\", \"price\": -10 }" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+      ] } }]
+    },
+    {
+      "name": "Créer sans nom",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/products",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"name\": \"\", \"price\": 10 }" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+      ] } }]
+    }
+  ]
+}
