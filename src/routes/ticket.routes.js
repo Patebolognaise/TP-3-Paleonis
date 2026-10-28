@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const ctrl = require("../controllers/ticket.controller");
 
-// Monté sur /api/tickets dans server.js (B7)
+// tickets
 router.get("/", ctrl.list);
 router.get("/:id", ctrl.get);
 router.post("/", ctrl.create);

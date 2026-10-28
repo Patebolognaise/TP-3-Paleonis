@@ -1,4 +1,4 @@
-// Erreur métier : permet au contrôleur de répondre 400 au lieu de 500
+// erreur validation
 class ValidationError extends Error {
   constructor(message) {
     super(message);
@@ -7,12 +7,11 @@ class ValidationError extends Error {
 }
 
 class Product {
-  // Champs privés (inaccessibles de l'extérieur)
   #id;
   #name;
   #price;
 
-  // Compteur d'id et "base de données" en mémoire, privés et partagés par la classe
+  // donnees memoire
   static #nextId = 4;
   static #data = [
     new Product(1, "Serveur VPS", 19.99),
@@ -27,7 +26,7 @@ class Product {
     this.#price = price;
   }
 
-  // Getters : lecture seule des champs privés
+  // getters
   get id() {
     return this.#id;
   }
@@ -40,12 +39,12 @@ class Product {
     return this.#price;
   }
 
-  // JSON.stringify ignore les champs privés : on expose explicitement les données
+  // sortie json
   toJSON() {
     return { id: this.#id, name: this.#name, price: this.#price };
   }
 
-  // Validation stricte : name non vide, price nombre jamais négatif
+  // validation produit
   static #validate(name, price) {
     if (typeof name !== "string" || name.trim() === "") {
       throw new ValidationError("name (string non vide) est requis");

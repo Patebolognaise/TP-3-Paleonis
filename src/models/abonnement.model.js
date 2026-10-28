@@ -2,7 +2,7 @@ const pool = require("../config/db");
 const { ValidationError, NotFoundError, ConflictError } = require("../errors");
 const { buildWhere } = require("./where");
 
-// Abonnement avec son offre et son serveur éventuel (null pour un nom de domaine)
+// abonnement offre serveur
 const SELECT_ABONNEMENT = `
   SELECT a.id, a.client_id, a.date_debut, a.date_fin, a.statut, a.prix_applique,
          json_build_object('id', o.id, 'nom', o.nom, 'categorie', o.categorie) AS offre,
@@ -33,8 +33,8 @@ class Abonnement {
     return rows[0] ?? null;
   }
 
-  // B3 : souscription. Tout passe par UNE connexion dans UNE transaction :
-  // soit l'abonnement est créé avec son serveur, soit rien n'est enregistré.
+  // souscription transaction
+  // operation atomique
   static async souscrire({ client_id, offre_id, datacenter_id }) {
     const conn = await pool.connect();
     let id;
@@ -44,7 +44,7 @@ class Abonnement {
       const client = await conn.query("SELECT id FROM client WHERE id = $1", [client_id]);
       if (client.rowCount === 0) throw new NotFoundError("Client introuvable");
 
-      // FOR SHARE : personne ne peut retirer ou modifier l'offre pendant la transaction
+      // verrou offre
       const { rows: offres } = await conn.query(
         "SELECT id, categorie, prix_mensuel_ht, en_vente FROM offre WHERE id = $1 FOR SHARE",
         [offre_id]
@@ -65,8 +65,8 @@ class Abonnement {
         const datacenter = await conn.query("SELECT id FROM datacenter WHERE id = $1", [datacenter_id]);
         if (datacenter.rowCount === 0) throw new NotFoundError("Datacenter introuvable");
 
-        // Serveur en service sans abonnement en cours. FOR UPDATE verrouille la ligne,
-        // SKIP LOCKED évite que deux souscriptions simultanées prennent le même serveur.
+        // serveur libre
+        // verrou serveur
         const { rows: serveurs } = await conn.query(
           `SELECT s.id FROM serveur s
            WHERE s.datacenter_id = $1
@@ -84,7 +84,7 @@ class Abonnement {
         serveurId = serveurs[0].id;
       }
 
-      // Le prix catalogue du moment est figé dans l'abonnement (RG3)
+      // prix actuel
       const { rows } = await conn.query(
         `INSERT INTO abonnement (client_id, offre_id, serveur_id, date_debut, statut, prix_applique)
          VALUES ($1, $2, $3, CURRENT_DATE, 'actif', $4)
@@ -93,8 +93,8 @@ class Abonnement {
       );
       id = rows[0].id;
 
-      // Démo du ROLLBACK : avec SIMULER_PANNE_B3=1 dans le .env, la transaction échoue
-      // après l'INSERT. On peut ensuite vérifier en base que rien n'a été enregistré.
+      // test rollback
+      // echec transaction
       if (process.env.SIMULER_PANNE_B3 === "1") {
         throw new Error("Panne simulée au milieu de la souscription (SIMULER_PANNE_B3)");
       }
@@ -109,8 +109,8 @@ class Abonnement {
     return Abonnement.findById(id);
   }
 
-  // B4 : résiliation. Le serveur redevient libre de lui-même : « libre » = aucun abonnement
-  // non résilié ne le référence. L'abonnement est conservé (historique, RG8).
+  // resiliation
+  // historique abonnement
   static async resilier(id) {
     const { rowCount } = await pool.query(
       `UPDATE abonnement SET statut = 'resilie', date_fin = GREATEST(CURRENT_DATE, date_debut)
@@ -121,7 +121,7 @@ class Abonnement {
     return Abonnement.findById(id);
   }
 
-  // Suspendre / réactiver. Un statut inconnu est refusé par la contrainte CHECK de la base.
+  // statut abonnement
   static async changerStatut(id, statut) {
     if (statut === "resilie") {
       throw new ValidationError("Pour résilier, utilisez PATCH /api/abonnements/:id/resiliation");
@@ -134,7 +134,7 @@ class Abonnement {
     return Abonnement.findById(id);
   }
 
-  // Aucune ligne modifiée : l'abonnement n'existe pas, ou il est déjà résilié
+  // abonnement absent
   static async #explainNoUpdate(id) {
     const { rowCount } = await pool.query("SELECT 1 FROM abonnement WHERE id = $1", [id]);
     if (rowCount === 0) throw new NotFoundError("Abonnement introuvable");

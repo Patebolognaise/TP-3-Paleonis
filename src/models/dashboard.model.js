@@ -1,8 +1,8 @@
 const pool = require("../config/db");
 
 class Dashboard {
-  // B9 : chiffre d'affaires mensuel des abonnements actifs, serveurs par datacenter et par statut.
-  // Les trois requêtes sont indépendantes : on les lance en parallèle sur le pool.
+  // statistiques mensuelles
+  // requetes paralleles
   static async getStats() {
     const [total, parCategorie, serveurs] = await Promise.all([
       pool.query(

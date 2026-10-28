@@ -1,5 +1,5 @@
-// Recrée la base : exécute schema.sql puis seed.sql avec la connexion du .env.
-// Alternative à psql / docker exec : npm run db:reset
+// reset database
+// load schema and data
 require("dotenv").config({ quiet: true });
 const fs = require("node:fs");
 const path = require("node:path");

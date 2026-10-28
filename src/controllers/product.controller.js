@@ -1,6 +1,6 @@
 const { Product, ValidationError } = require("../models/product.model");
 
-// GET /api/products
+// liste produits
 exports.listProducts = (req, res, next) => {
   try {
     const products = Product.findAll();
@@ -10,7 +10,7 @@ exports.listProducts = (req, res, next) => {
   }
 };
 
-// GET /api/products/:id
+// detail produit
 exports.getProduct = (req, res, next) => {
   try {
     const product = Product.findById(req.params.id);
@@ -21,7 +21,7 @@ exports.getProduct = (req, res, next) => {
   }
 };
 
-// POST /api/products
+// creation produit
 exports.createProduct = (req, res, next) => {
   try {
     const product = Product.createOne(req.body);

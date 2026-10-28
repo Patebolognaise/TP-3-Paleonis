@@ -1,8 +1,8 @@
 const pool = require("../config/db");
 const { buildWhere } = require("./where");
 
-// « libre » est calculé : aucun abonnement non résilié ne référence le serveur.
-// L'index unique partiel garantit au plus un abonnement en cours, donc une ligne par serveur.
+// serveur libre
+// abonnement unique
 const SELECT_SERVEUR = `
   SELECT s.id, s.nom_hote, host(s.adresse_ip) AS adresse_ip, s.statut, s.date_mise_en_service,
          s.datacenter_id, d.nom AS datacenter,
@@ -12,7 +12,7 @@ const SELECT_SERVEUR = `
   LEFT JOIN abonnement a ON a.serveur_id = s.id AND a.statut <> 'resilie'`;
 
 class Serveur {
-  // B6 : filtres combinables par datacenter, statut, libre / attribué
+  // filtres serveur
   static async findAll({ datacenter_id, statut, libre } = {}) {
     const { where, params } = buildWhere([
       ["s.datacenter_id = ?", datacenter_id],
@@ -28,7 +28,7 @@ class Serveur {
     return rows[0] ?? null;
   }
 
-  // Un statut inconnu est refusé par la contrainte CHECK de la base
+  // statut base
   static async changerStatut(id, statut) {
     const { rowCount } = await pool.query("UPDATE serveur SET statut = $2 WHERE id = $1", [id, statut]);
     return rowCount === 0 ? null : Serveur.findById(id);

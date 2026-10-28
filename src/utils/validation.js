@@ -1,21 +1,21 @@
 const { ValidationError } = require("../errors");
 
-// Plus grand entier accepté par une colonne INT PostgreSQL
+// entier postgres
 const INT_MAX = 2147483647;
 
 function isId(value) {
   return Number.isInteger(value) && value > 0 && value <= INT_MAX;
 }
 
-// Identifiant reçu dans l'URL : "12" -> 12, "abc" / "-1" / "1.5" -> 400
+// id url
 function parseId(value, field = "id") {
   const id = /^\d+$/.test(value) ? Number(value) : NaN;
   if (!isId(id)) throw new ValidationError(`${field} doit être un entier strictement positif`);
   return id;
 }
 
-// Règles de forme d'un champ. Un "?" final rend le champ facultatif (absent ou null -> null).
-// La base vérifie ensuite les valeurs métier (valeurs autorisées, prix >= 0, unicité...).
+// validation champ
+// regles base
 const CHECKS = {
   string: (v) => typeof v === "string" && v.trim() !== "",
   number: (v) => typeof v === "number" && Number.isFinite(v),
@@ -30,7 +30,7 @@ const MESSAGES = {
   id: "doit être un entier strictement positif",
 };
 
-// Vérifie la forme d'un body JSON et renvoie uniquement les champs attendus (chaînes nettoyées)
+// validation corps
 function checkBody(body, rules) {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
     throw new ValidationError("Le corps de la requête doit être un objet JSON");
@@ -56,7 +56,7 @@ function checkBody(body, rules) {
   return data;
 }
 
-// Vérifie les paramètres de query string (?nom=...&en_vente=true). Tous sont facultatifs.
+// validation filtres
 function checkQuery(query, rules) {
   const data = {};
   const details = [];

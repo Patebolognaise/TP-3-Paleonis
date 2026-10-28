@@ -1,14 +1,11 @@
--- =============================================================
--- PaLeonis : schéma PostgreSQL (rejouable)
--- Chargement : npm run db:reset, ou psql -U paleonis -d paleonis -f database/schema.sql
--- =============================================================
+-- paleonis postgres schema
 
-SET client_min_messages = warning; -- masque les NOTICE des DROP ... IF EXISTS
+SET client_min_messages = warning; -- notice
 
 DROP TABLE IF EXISTS ticket, abonnement, technicien, serveur, offre, client, datacenter CASCADE;
 DROP FUNCTION IF EXISTS bloquer_suppression_client_en_cours() CASCADE;
 
--- RG4 : datacenters
+-- datacenters
 CREATE TABLE datacenter (
   id     INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nom    VARCHAR(50)  NOT NULL,
@@ -16,7 +13,7 @@ CREATE TABLE datacenter (
   CONSTRAINT datacenter_nom_unique UNIQUE (nom)
 );
 
--- RG1 : clients (particuliers et entreprises dans la même table)
+-- clients
 CREATE TABLE client (
   id                INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   type              VARCHAR(11)  NOT NULL,
@@ -30,14 +27,14 @@ CREATE TABLE client (
   CONSTRAINT client_email_format     CHECK (email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
   CONSTRAINT client_telephone_format CHECK (telephone ~ '^\+?[0-9][0-9 .-]{5,19}$'),
   CONSTRAINT client_siret_format     CHECK (siret ~ '^[0-9]{14}$'),
-  -- un SIRET pour les entreprises, et seulement pour elles
+  -- siret entreprise 
   CONSTRAINT client_siret_entreprise CHECK ((type = 'entreprise') = (siret IS NOT NULL)),
   CONSTRAINT client_siret_unique     UNIQUE (siret)
 );
--- Deux clients ne peuvent pas avoir le même email, quelle que soit la casse
+-- email unique
 CREATE UNIQUE INDEX client_email_unique ON client (lower(email));
 
--- RG2 : catalogue
+-- catalogue
 CREATE TABLE offre (
   id               INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nom              VARCHAR(100)  NOT NULL,
@@ -50,7 +47,7 @@ CREATE TABLE offre (
   CONSTRAINT offre_prix_positif    CHECK (prix_mensuel_ht >= 0)
 );
 
--- RG4, RG5 : serveurs
+-- serveurs
 CREATE TABLE serveur (
   id                    INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nom_hote              VARCHAR(253) NOT NULL,
@@ -63,7 +60,7 @@ CREATE TABLE serveur (
   CONSTRAINT serveur_statut_check      CHECK (statut IN ('en_service', 'maintenance', 'hors_service'))
 );
 
--- RG7 : techniciens
+-- techniciens
 CREATE TABLE technicien (
   id             INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nom            VARCHAR(100) NOT NULL,
@@ -74,7 +71,7 @@ CREATE TABLE technicien (
   CONSTRAINT technicien_email_pro    CHECK (email ~ '^[^@\s]+@paleonis\.fr$')
 );
 
--- RG3, RG5 : abonnements (souscription d'un client à une offre)
+-- abonnements
 CREATE TABLE abonnement (
   id             INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   client_id      INT           NOT NULL REFERENCES client (id)  ON DELETE CASCADE,
@@ -89,13 +86,13 @@ CREATE TABLE abonnement (
   CONSTRAINT abonnement_dates_coherentes CHECK (date_fin IS NULL OR date_fin >= date_debut),
   CONSTRAINT abonnement_resilie_date_fin CHECK (statut <> 'resilie' OR date_fin IS NOT NULL)
 );
--- RG5 : un serveur n'est attribué qu'à un seul abonnement en cours à la fois.
--- Les abonnements résiliés gardent leur serveur_id (historique) sans bloquer la réattribution.
+-- serveur abonnement unique
+-- historique
 CREATE UNIQUE INDEX abonnement_serveur_en_cours_unique
   ON abonnement (serveur_id) WHERE statut <> 'resilie';
 CREATE INDEX abonnement_client_idx ON abonnement (client_id);
 
--- RG6, RG7 : tickets de support
+-- tickets
 CREATE TABLE ticket (
   id              INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   client_id       INT          NOT NULL REFERENCES client (id)     ON DELETE CASCADE,
@@ -114,8 +111,7 @@ CREATE TABLE ticket (
 CREATE INDEX ticket_technicien_idx ON ticket (technicien_id);
 CREATE INDEX ticket_client_idx ON ticket (client_id);
 
--- RG8 : on ne supprime jamais un client qui a encore un abonnement en cours
--- (actif ou suspendu). La base le garantit, même en dehors de l'API.
+-- client abonnement actif
 CREATE FUNCTION bloquer_suppression_client_en_cours() RETURNS trigger AS $$
 BEGIN
   IF EXISTS (SELECT 1 FROM abonnement WHERE client_id = OLD.id AND statut <> 'resilie') THEN

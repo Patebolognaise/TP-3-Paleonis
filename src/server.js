@@ -1,4 +1,4 @@
-require("dotenv").config({ quiet: true }); // toute première ligne : le pool lit process.env
+require("dotenv").config({ quiet: true }); // environnement
 const express = require("express");
 const pool = require("./config/db");
 const { notFound, errorHandler } = require("./middlewares/errorHandler");
@@ -14,7 +14,7 @@ const dashboardRoutes = require("./routes/dashboard.routes");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json()); // pour lire le JSON
+app.use(express.json()); // json
 
 app.use("/api/datacenters", datacenterRoutes);
 app.use("/api/clients", clientRoutes);
@@ -25,10 +25,10 @@ app.use("/api/tickets", ticketRoutes);
 app.use("/api/techniciens", technicienRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
-// Middleware 404 : aucune route n'a répondu
+// route absente
 app.use(notFound);
 
-// Middleware global d'erreurs : erreurs métier et erreurs PostgreSQL -> codes HTTP
+// erreurs api
 app.use(errorHandler);
 
 pool.query("SELECT NOW()")

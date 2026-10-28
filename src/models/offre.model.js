@@ -4,7 +4,7 @@ const { buildWhere } = require("./where");
 const COLUMNS = "id, nom, categorie, prix_mensuel_ht, en_vente";
 
 class Offre {
-  // B2 : catalogue filtrable par catégorie et par disponibilité
+  // catalogue filtres
   static async findAll({ categorie, en_vente } = {}) {
     const { where, params } = buildWhere([
       ["categorie = ?", categorie],
@@ -22,7 +22,7 @@ class Offre {
     return rows[0] ?? null;
   }
 
-  // Prix >= 0, catégorie autorisée et nom unique : contrôlés par la base
+  // contraintes base
   static async create({ nom, categorie, prix_mensuel_ht }) {
     const { rows } = await pool.query(
       `INSERT INTO offre (nom, categorie, prix_mensuel_ht)
@@ -33,7 +33,7 @@ class Offre {
     return rows[0];
   }
 
-  // Les abonnements existants gardent leur prix_applique (RG3)
+  // prix historique
   static async update(id, { nom, categorie, prix_mensuel_ht }) {
     const { rows } = await pool.query(
       `UPDATE offre SET nom = $2, categorie = $3, prix_mensuel_ht = $4
@@ -44,7 +44,7 @@ class Offre {
     return rows[0] ?? null;
   }
 
-  // RG2 : on retire de la vente, on ne supprime pas
+  // retrait offre
   static async retirer(id) {
     const { rows } = await pool.query(
       `UPDATE offre SET en_vente = FALSE WHERE id = $1 RETURNING ${COLUMNS}`,

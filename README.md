@@ -66,7 +66,7 @@ Ce script exécute `database/schema.sql` puis `database/seed.sql` avec la connex
 ```bash
 psql -U paleonis -d paleonis -f database/schema.sql
 psql -U paleonis -d paleonis -f database/seed.sql
-# ou
+# alternative
 docker exec -i paleonis-db psql -U paleonis -d paleonis < database/schema.sql
 docker exec -i paleonis-db psql -U paleonis -d paleonis < database/seed.sql
 ```

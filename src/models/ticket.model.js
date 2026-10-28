@@ -12,7 +12,7 @@ const SELECT_TICKET = `
   LEFT JOIN serveur s     ON s.id = t.serveur_id
   LEFT JOIN technicien te ON te.id = t.technicien_id`;
 
-// Cycle de vie d'un ticket : statut actuel -> statuts autorisés ensuite
+// cycle ticket
 const TRANSITIONS = {
   ouvert: ["en_cours", "ferme"],
   en_cours: ["resolu", "ouvert"],
@@ -37,7 +37,7 @@ class Ticket {
     return rows[0] ?? null;
   }
 
-  // B8 : tickets non fermés d'un technicien, du plus critique au moins critique, puis du plus ancien
+  // tickets technicien
   static async findNonFermesByTechnicien(technicienId) {
     const { rows } = await pool.query(
       `${SELECT_TICKET}
@@ -49,7 +49,7 @@ class Ticket {
     return rows;
   }
 
-  // B7 : ouverture. Le serveur éventuel doit appartenir au client (RG6).
+  // creation ticket
   static async create({ client_id, sujet, description, priorite, serveur_id }) {
     const client = await pool.query("SELECT id FROM client WHERE id = $1", [client_id]);
     if (client.rowCount === 0) throw new NotFoundError("Client introuvable");
@@ -77,7 +77,7 @@ class Ticket {
     return Ticket.findById(rows[0].id);
   }
 
-  // B7 : assignation. Un technicien inexistant est refusé par la clé étrangère.
+  // assignation ticket
   static async assigner(id, technicienId) {
     const { rowCount } = await pool.query(
       "UPDATE ticket SET technicien_id = $2 WHERE id = $1 AND statut <> 'ferme'",
@@ -91,7 +91,7 @@ class Ticket {
     return Ticket.findById(id);
   }
 
-  // B7 : évolution du statut selon le cycle de vie
+  // changement statut
   static async changerStatut(id, statut) {
     if (!(statut in TRANSITIONS)) {
       throw new BusinessRuleError("statut doit valoir ouvert, en_cours, resolu ou ferme");
@@ -104,7 +104,7 @@ class Ticket {
     if (statut === "en_cours" && ticket.technicien_id === null) {
       throw new ConflictError("Le ticket doit être assigné à un technicien avant de passer en_cours");
     }
-    // WHERE statut = ancien statut : si quelqu'un l'a modifié entre-temps, on ne l'écrase pas
+    // verification statut
     const { rowCount } = await pool.query(
       "UPDATE ticket SET statut = $2 WHERE id = $1 AND statut = $3",
       [id, statut, ticket.statut]

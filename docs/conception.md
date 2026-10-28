@@ -346,7 +346,7 @@ SELECT a.id, a.date_debut, a.date_fin, a.statut, a.prix_applique,
        d.nom AS datacenter_nom, d.ville AS datacenter_ville
 FROM abonnement a
 JOIN offre o            ON o.id = a.offre_id
-LEFT JOIN serveur s     ON s.id = a.serveur_id      -- LEFT : un nom de domaine n'a pas de serveur
+LEFT JOIN serveur s     ON s.id = a.serveur_id      -- jointure serveur
 LEFT JOIN datacenter d  ON d.id = s.datacenter_id
 WHERE a.client_id = $1
 ORDER BY a.date_debut DESC, a.id DESC;
@@ -355,13 +355,13 @@ ORDER BY a.date_debut DESC, a.id DESC;
 ### B9 – Tableau de bord
 
 ```sql
--- Chiffre d'affaires mensuel total des abonnements actifs
+-- chiffre affaires mensuel
 SELECT COALESCE(SUM(prix_applique), 0) AS ca_mensuel_ht,
        COUNT(*)::int AS abonnements_actifs
 FROM abonnement
 WHERE statut = 'actif';
 
--- Chiffre d'affaires mensuel par catégorie d'offre
+-- chiffre affaires categorie
 SELECT o.categorie,
        COALESCE(SUM(a.prix_applique), 0) AS ca_mensuel_ht,
        COUNT(a.id)::int AS abonnements_actifs
@@ -370,7 +370,7 @@ LEFT JOIN abonnement a ON a.offre_id = o.id AND a.statut = 'actif'
 GROUP BY o.categorie
 ORDER BY ca_mensuel_ht DESC;
 
--- Nombre de serveurs par datacenter et par statut
+-- serveurs datacenter statut
 SELECT d.id, d.nom, d.ville,
        COUNT(s.id)::int AS total,
        COUNT(s.id) FILTER (WHERE s.statut = 'en_service')::int   AS en_service,
@@ -387,15 +387,15 @@ ORDER BY d.nom;
 ```sql
 BEGIN;
 
--- 1. Le client existe ?
+-- client existe
 SELECT id FROM client WHERE id = $client_id;
 
--- 2. L'offre existe et est en vente ? (FOR SHARE : personne ne la retire pendant la transaction)
+-- offre disponible
 SELECT id, categorie, prix_mensuel_ht, en_vente FROM offre WHERE id = $offre_id FOR SHARE;
 
--- 3. Si hébergement : un serveur libre et en service du datacenter demandé.
---    FOR UPDATE verrouille la ligne, SKIP LOCKED évite que deux souscriptions
---    simultanées se battent pour le même serveur.
+-- serveur libre
+-- verrou serveur
+-- souscription unique
 SELECT s.id
 FROM serveur s
 WHERE s.datacenter_id = $datacenter_id
@@ -405,14 +405,14 @@ WHERE s.datacenter_id = $datacenter_id
 ORDER BY s.id
 LIMIT 1
 FOR UPDATE SKIP LOCKED;
--- aucun résultat → ROLLBACK, 409
+-- echec transaction
 
--- 4. Création de l'abonnement avec le prix catalogue du moment
+-- creation abonnement
 INSERT INTO abonnement (client_id, offre_id, serveur_id, date_debut, statut, prix_applique)
 VALUES ($client_id, $offre_id, $serveur_id, CURRENT_DATE, 'actif', $prix_mensuel_ht)
 RETURNING id;
 
-COMMIT;   -- ou ROLLBACK à la moindre erreur
+COMMIT;   -- validation
 ```
 
 ### B4 – Résiliation

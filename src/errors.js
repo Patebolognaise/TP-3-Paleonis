@@ -1,5 +1,5 @@
-// Erreurs métier levées par les modèles et les contrôleurs.
-// Elles ne connaissent pas le HTTP : c'est le middleware d'erreurs global qui les traduit en codes.
+// erreurs metier
+// sans http
 class AppError extends Error {
   constructor(message, details) {
     super(message);
@@ -8,16 +8,16 @@ class AppError extends Error {
   }
 }
 
-// Requête mal formée : champ manquant, mauvais type, id non entier
+// requete invalide
 class ValidationError extends AppError {}
 
-// Ressource introuvable
+// ressource absente
 class NotFoundError extends AppError {}
 
-// Conflit avec l'état des données : offre retirée, aucun serveur libre, déjà résilié...
+// conflit
 class ConflictError extends AppError {}
 
-// Données bien formées mais contraires à une règle métier
+// regle metier
 class BusinessRuleError extends AppError {}
 
 module.exports = { AppError, ValidationError, NotFoundError, ConflictError, BusinessRuleError };

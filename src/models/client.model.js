@@ -6,7 +6,7 @@ const Abonnement = require("./abonnement.model");
 const COLUMNS = "id, type, nom, email, telephone, siret, date_inscription";
 
 class Client {
-  // B1 : liste, avec recherche partielle insensible à la casse sur le nom et l'email
+  // liste recherche client
   static async findAll({ nom, email, type } = {}) {
     const { where, params } = buildWhere([
       ["nom ILIKE ?", contains(nom)],
@@ -22,7 +22,7 @@ class Client {
     return rows[0] ?? null;
   }
 
-  // B5 : informations du client + abonnements avec l'offre et le serveur éventuel
+  // fiche client
   static async findFiche(id) {
     const client = await Client.findById(id);
     if (!client) return null;
@@ -30,7 +30,7 @@ class Client {
     return { ...client, abonnements };
   }
 
-  // Les contraintes (type, email unique et bien formé, SIRET si entreprise...) sont vérifiées par la base
+  // contraintes base
   static async create({ type, nom, email, telephone, siret }) {
     const { rows } = await pool.query(
       `INSERT INTO client (type, nom, email, telephone, siret)
@@ -41,7 +41,7 @@ class Client {
     return rows[0];
   }
 
-  // Remplacement complet ; date_inscription n'est pas modifiable
+  // remplacement client
   static async update(id, { type, nom, email, telephone, siret }) {
     const { rows } = await pool.query(
       `UPDATE client
@@ -53,7 +53,7 @@ class Client {
     return rows[0] ?? null;
   }
 
-  // RG8 : le trigger de la base refuse la suppression si un abonnement est encore actif ou suspendu
+  // suppression client
   static async delete(id) {
     const { rowCount } = await pool.query("DELETE FROM client WHERE id = $1", [id]);
     if (rowCount === 0) throw new NotFoundError("Client introuvable");
