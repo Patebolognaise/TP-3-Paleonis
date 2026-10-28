@@ -1,6 +1,7 @@
 const pool = require("../config/db");
 const { NotFoundError } = require("../errors");
 const { buildWhere, contains } = require("./where");
+const Abonnement = require("./abonnement.model");
 
 const COLUMNS = "id, type, nom, email, telephone, siret, date_inscription";
 
@@ -25,23 +26,8 @@ class Client {
   static async findFiche(id) {
     const client = await Client.findById(id);
     if (!client) return null;
-
-    const { rows } = await pool.query(
-      `SELECT a.id, a.date_debut, a.date_fin, a.statut, a.prix_applique,
-              json_build_object('id', o.id, 'nom', o.nom, 'categorie', o.categorie) AS offre,
-              CASE WHEN s.id IS NULL THEN NULL ELSE json_build_object(
-                'id', s.id, 'nom_hote', s.nom_hote, 'adresse_ip', host(s.adresse_ip), 'statut', s.statut,
-                'datacenter_id', d.id, 'datacenter', d.nom || ' (' || d.ville || ')'
-              ) END AS serveur
-       FROM abonnement a
-       JOIN offre o           ON o.id = a.offre_id
-       LEFT JOIN serveur s    ON s.id = a.serveur_id
-       LEFT JOIN datacenter d ON d.id = s.datacenter_id
-       WHERE a.client_id = $1
-       ORDER BY a.date_debut DESC, a.id DESC`,
-      [id]
-    );
-    return { ...client, abonnements: rows };
+    const abonnements = await Abonnement.findAll({ client_id: id });
+    return { ...client, abonnements };
   }
 
   // Les contraintes (type, email unique et bien formé, SIRET si entreprise...) sont vérifiées par la base
