@@ -152,15 +152,20 @@ Transitions autorisées : `ouvert → en_cours | ferme`, `en_cours → resolu | 
 ```json
 {
   "chiffre_affaires": {
-    "total_mensuel_ht": 812.36,
-    "abonnements_actifs": 15,
-    "par_categorie": [ { "categorie": "dedie", "ca_mensuel_ht": 561.00, "abonnements_actifs": 4 } ]
+    "total_mensuel_ht": 648.4,
+    "abonnements_actifs": 17,
+    "par_categorie": [
+      { "categorie": "dedie", "ca_mensuel_ht": 561, "abonnements_actifs": 5 },
+      { "categorie": "vps", "ca_mensuel_ht": 64.96, "abonnements_actifs": 4 },
+      { "categorie": "mutualise", "ca_mensuel_ht": 15.98, "abonnements_actifs": 2 },
+      { "categorie": "domaine", "ca_mensuel_ht": 6.46, "abonnements_actifs": 6 }
+    ]
   },
   "serveurs": {
     "total": 24,
     "par_datacenter": [
-      { "datacenter_id": 1, "nom": "PAR-1", "ville": "Paris", "total": 7, "libres": 1,
-        "en_service": 5, "maintenance": 1, "hors_service": 1 }
+      { "datacenter_id": 3, "nom": "LYS-1", "ville": "Lyon", "total": 6,
+        "en_service": 5, "maintenance": 1, "hors_service": 0, "libres": 4 }
     ]
   }
 }
