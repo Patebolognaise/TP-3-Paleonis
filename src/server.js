@@ -6,6 +6,8 @@ const datacenterRoutes = require("./routes/datacenter.routes");
 const clientRoutes = require("./routes/client.routes");
 const offreRoutes = require("./routes/offre.routes");
 const abonnementRoutes = require("./routes/abonnement.routes");
+const serveurRoutes = require("./routes/serveur.routes");
+const ticketRoutes = require("./routes/ticket.routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,6 +18,8 @@ app.use("/api/datacenters", datacenterRoutes);
 app.use("/api/clients", clientRoutes);
 app.use("/api/offres", offreRoutes);
 app.use("/api/abonnements", abonnementRoutes);
+app.use("/api/serveurs", serveurRoutes);
+app.use("/api/tickets", ticketRoutes);
 
 // Middleware 404 : aucune route n'a répondu
 app.use(notFound);
